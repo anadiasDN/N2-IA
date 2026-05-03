@@ -1,0 +1,57 @@
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+
+#define N 4
+
+// Função para imprimir o tabuleiro
+void imprimirSolucao(int tabuleiro[N][N]) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++)
+            printf(" %d ", tabuleiro[i][j]);
+        printf("\n");
+    }
+    printf("\n");
+}
+
+// Verifica se é seguro colocar a rainha
+bool ehSeguro(int tabuleiro[N][N], int linha, int col) {
+    int i, j;
+    // Verifica esta linha à esquerda
+    for (i = 0; i < col; i++)
+        if (tabuleiro[linha][i]) return false;
+    // Verifica diagonal superior esquerda
+    for (i = linha, j = col; i >= 0 && j >= 0; i--, j--)
+        if (tabuleiro[i][j]) return false;
+    // Verifica diagonal inferior esquerda
+    for (i = linha, j = col; j >= 0 && i < N; i++, j--)
+        if (tabuleiro[i][j]) return false;
+    return true;
+}
+
+// Função principal de backtracking
+bool resolverNQUtil(int tabuleiro[N][N], int col) {
+    if (col >= N) return true; // Todas as rainhas foram colocadas
+
+    for (int i = 0; i < N; i++) {
+        if (ehSeguro(tabuleiro, i, col)) {
+            tabuleiro[i][col] = 1; // Tenta colocar
+            
+            // Recursão para próxima coluna
+            if (resolverNQUtil(tabuleiro, col + 1)) return true;
+            
+            tabuleiro[i][col] = 0; // Backtracking: remove
+        }
+    }
+    return false;
+}
+
+int main() {
+    int tabuleiro[N][N] = {0};
+    if (resolverNQUtil(tabuleiro, 0) == false) {
+        printf("Solucao nao existe");
+    } else {
+        imprimirSolucao(tabuleiro);
+    }
+    return 0;
+}
