@@ -1,96 +1,107 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Definimos números simples para representar Verdadeiro e Falso */
 #define FALSE 0
 #define TRUE 1
 
-/* Função auxiliar para imprimir o tabuleiro formatado com a posição das rainhas. */
+/* OBJETIVO DA FUNÇÃO Desenhar o tabuleiro na tela sempre que encontrar uma solução válida. */
 void mostra_solucao(int n, int col_rainha[]);
 
-/* Função auxiliar para alocação de memória com verificação de erro. */
+/* OBJETIVO DA FUNÇÃO Alocar memória para o programa, garantindo que ele pare se o computador ficar sem espaço. */
 void *mallocc(unsigned int nbytes);
 
-/* Função principal da lógica que gerencia a busca por todas as soluções do problema. */
+/* OBJETIVO DA FUNÇÃO É o motor do programa. Ela testa todas as combinações possíveis e gerencia o backtracking. */
 void rainhas(int n);
 
 int main(int argc, char *argv[]) {
     int n;
+    /* Verifica se o usuário digitou o número de rainhas ao rodar o programa */
     if (argc == 1) {
         printf("Uso: %s <num_rainhas>\n", argv[0]);
         return 1;
     }
+    /* Converte o texto digitado pelo usuário em um número inteiro */
     n = atoi(argv[1]);
     if (n <= 0) {
         printf("O argumento deve ser um numero maior que zero.\n");
         return 1;
     }
+    /* Chama a função que vai resolver o problema */
     rainhas(n);
     return 0;
 }
 
 void rainhas(int n) {
-    int *col_rainha;  /* Coluna ocupada pela rainha em cada linha */
-    int *col_livre;   /* Vetor de controle para colunas livres */
-    int *diag_livre;  /* Vetor base para diagonais principais */
-    int *diag_p_livre;/* Ponteiro para controle de diagonais principais (lin - col) */
-    int *diag_s_livre;/* Vetor de controle para diagonais secundárias (lin + col) */
+    /* Criamos "listas" (vetores) para anotar onde as rainhas estão e quais espaços estão livres */
+    int *col_rainha;  /* Anota em qual coluna a rainha de cada linha foi colocada */
+    int *col_livre;   /* Diz se uma coluna específica está livre (sem rainha) */
+    int *diag_livre;  /* Lista para controlar as diagonais principais */
+    int *diag_p_livre;/* Atalho para acessar as diagonais principais com índices negativos */
+    int *diag_s_livre;/* Lista para controlar as diagonais secundárias */
     int lin, col, k, n_solucoes;
     int acabou;
     int achou_posicao; 
 
-    /* local de estruturas de dados */
+    /* Reservando espaço na memória para as nossas listas de controle */
     col_livre = mallocc(n * sizeof(int));
     diag_livre = mallocc((2 * n - 1) * sizeof(int));
     diag_s_livre = mallocc((2 * n - 1) * sizeof(int));
-    diag_p_livre = diag_livre + n - 1; /* Ajuste de índice para permitir valores negativos */
+    /* O ajuste abaixo permite que o cálculo (linha - coluna) funcione mesmo dando número negativo */
+    diag_p_livre = diag_livre + n - 1; 
     col_rainha = mallocc(n * sizeof(int));
 
-    /* Inicialização: Todas as posições começam como seguras (TRUE) */
+    /* No começo tudo está vazio então marcamos todas as colunas e diagonais como LIVRES (TRUE) */
     for (k = 0; k < n; k++) col_livre[k] = TRUE;
     for (k = 0; k < 2 * n - 1; k++) diag_livre[k] = diag_s_livre[k] = TRUE;
 
+    /* Começamos do zero primeira linha primeira coluna e nenhuma solução ainda */
     lin = 0; col = 0; n_solucoes = 0; acabou = FALSE;
 
+    /* O programa vai rodar este laço enquanto ainda houver tentativas para fazer */
     while (!acabou) {
         achou_posicao = FALSE;
+        /* Este laço tenta achar uma coluna segura para a rainha na linha atual */
         while (col < n && !achou_posicao) {
-            /* CRITÉRIO DE VALIDADE Verifica se a coluna e as duas diagonais estão livres para a posição atual. */
+            
+            /* CRITÉRIO DE VALIDADE Aqui o algoritmo checa se a coluna e as duas diagonais 
+               estão vazias. Se as três estiverem livres, a posição é segura para a rainha. */
             if (col_livre[col] && diag_p_livre[lin - col] && diag_s_livre[lin + col]) {
-                /* MARCAÇÃO DE ESCOLHA a posição é ocupada e os vetores de controle são atualizados. */
+                
+                /* Se for seguro ocupamos o espaço marcamos coluna e diagonais como OCUPADAS (FALSE) */
                 col_livre[col] = FALSE;
                 diag_p_livre[lin - col] = FALSE;
                 diag_s_livre[lin + col] = FALSE;
-                col_rainha[lin] = col;
-                achou_posicao = TRUE;
+                col_rainha[lin] = col; /* Salva que nesta linha a rainha está nesta coluna */
+                achou_posicao = TRUE;  /* Saímos deste laço porque achamos uma vaga */
             } else {
-                col++; /* Tenta a próxima coluna se a atual for inválida */
+                /* Se a posição estava ocupada ou era perigosa tentamos a próxima coluna da direita */
+                col++; 
             }
         }
 
         if (achou_posicao) {
-            /* MOMENTO DE AVANÇO se a rainha foi colocada e ainda restam linhas, o algoritmo avança para a próxima linha (lin++) e reinicia a busca desde a primeira coluna. */
+            /* MOMENTO DE AVANÇO Se conseguimos colocar a rainha e ainda não chegamos na última linha, vamos para a linha de baixo (lin++) começar a busca na coluna 0. */
             if (lin != n - 1) {
                 lin++;
                 col = 0;
             } else {
-                /* CONDIÇÃO DE SUCESSO uma solução completa foi encontrada. */
+                /*  aqui colocamos a última rainha com sucesso! */
                 n_solucoes++;
-                mostra_solucao(n, col_rainha);
+                mostra_solucao(n, col_rainha); /* Mostra o desenho da solução na tela */
 
-                /* BACKTRACKING FORÇADO após achar uma solução, desfaz a última escolha para continuar a busca por outras combinações. */
+                /* BACKTRACKING Mesmo achando uma solução precisamos continuar procurando outras. Então "fingimos" que a última posição não serviu Limpamos as marcações de ocupado da última rainha e forçamos o código a tentar outras colunas (col = n força o erro no próximo passo). */
                 col_livre[col] = TRUE;
                 diag_p_livre[lin - col] = TRUE;
                 diag_s_livre[lin + col] = TRUE;
-                col = n; /* Força a entrada no bloco de backtracking no próximo ciclo */
+                col = n; 
             }
         } else {
-            /* CONDIÇÃO DE PARADA Se o retrocesso chegar à linha 0 e não houver mais colunas para testar. */
+            /* CONDIÇÃO DE PARADA DA RECURSÃO Se o algoritmo tentou voltar além da primeira linha (linha 0), significa que testamos absolutamente tudo. */
             if (lin == 0) {
                 acabou = TRUE;
             } else {
-                /* MOMENTO DE RETROCESSO Quando nenhuma coluna na linha atual é válida, o algoritmo 
-                   volta para a linha anterior (lin--), desfaz a escolha feita antes (reset para TRUE) 
-                   e tenta a próxima coluna disponível (col++). */
+                /* MOMENTO DO BACKTRACKING Se não achamos nenhuma coluna válida na linha atual, significa que a rainha da linha de CIMA está num lugar ruim. Voltamos uma linha (lin--), liberamos a posição que ela ocupava (TRUE)e tentamos mover essa rainha de cima uma casa para a direita (col++). */
                 lin--; 
                 col = col_rainha[lin];
                 col_livre[col] = TRUE;
@@ -101,8 +112,10 @@ void rainhas(int n) {
         }
     }
 
+    /* Se depois de testar tudo não achou nada, avisa o usuário */
     if (n_solucoes == 0) printf("Nao ha' solucao para %d rainhas.\n", n);
     
+    /* Limpeza final devolvemos a memória que pegamos emprestada para o sistema */
     free(col_rainha); free(col_livre); free(diag_livre); free(diag_s_livre);
 }
 
@@ -110,8 +123,10 @@ void mostra_solucao(int n, int col_rainha[]) {
     static int conta = 0;
     int col, lin;
     printf("Solucao %i:\n", ++conta);
+    /* Desenha o tabuleiro linha por linha */
     for (lin = 0; lin < n; lin++) {
         for (col = 0; col < n; col++) {
+            /* Se a coluna anotada for a atual, desenha a Rainha (R), senão desenha vazio (_) */
             printf((col_rainha[lin] == col) ? "|R" : "|_");
         }
         printf("|\n");
