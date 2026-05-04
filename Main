@@ -38,11 +38,11 @@ void rainhas(int n) {
     int acabou;
     int achou_posicao; 
 
-    /* Alocação de estruturas de dados */
+    /* local de estruturas de dados */
     col_livre = mallocc(n * sizeof(int));
     diag_livre = mallocc((2 * n - 1) * sizeof(int));
     diag_s_livre = mallocc((2 * n - 1) * sizeof(int));
-    diag_p_livre = diag_livre + n - 1; /* Ajuste de índice para permitir valores negativos (lin-col) */
+    diag_p_livre = diag_livre + n - 1; /* Ajuste de índice para permitir valores negativos */
     col_rainha = mallocc(n * sizeof(int));
 
     /* Inicialização: Todas as posições começam como seguras (TRUE) */
@@ -54,10 +54,9 @@ void rainhas(int n) {
     while (!acabou) {
         achou_posicao = FALSE;
         while (col < n && !achou_posicao) {
-            /* CRITÉRIO DE VALIDADE: Verifica se a coluna e as duas diagonais (principal e secundária) 
-               estão livres para a posição atual (lin, col). */
+            /* CRITÉRIO DE VALIDADE Verifica se a coluna e as duas diagonais estão livres para a posição atual. */
             if (col_livre[col] && diag_p_livre[lin - col] && diag_s_livre[lin + col]) {
-                /* MARCAÇÃO DE ESCOLHA: A posição é ocupada e os vetores de controle são atualizados. */
+                /* MARCAÇÃO DE ESCOLHA a posição é ocupada e os vetores de controle são atualizados. */
                 col_livre[col] = FALSE;
                 diag_p_livre[lin - col] = FALSE;
                 diag_s_livre[lin + col] = FALSE;
@@ -69,29 +68,27 @@ void rainhas(int n) {
         }
 
         if (achou_posicao) {
-            /* MOMENTO DE AVANÇO: Se a rainha foi colocada e ainda restam linhas, o algoritmo 
-               avança para a próxima linha (lin++) e reinicia a busca desde a primeira coluna. */
+            /* MOMENTO DE AVANÇO se a rainha foi colocada e ainda restam linhas, o algoritmo avança para a próxima linha (lin++) e reinicia a busca desde a primeira coluna. */
             if (lin != n - 1) {
                 lin++;
                 col = 0;
             } else {
-                /* CONDIÇÃO DE SUCESSO: Uma solução completa foi encontrada. */
+                /* CONDIÇÃO DE SUCESSO uma solução completa foi encontrada. */
                 n_solucoes++;
                 mostra_solucao(n, col_rainha);
 
-                /* RETROCESSO (BACKTRACKING) FORÇADO: Após achar uma solução, desfaz a última 
-                   escolha para continuar a busca por outras combinações. */
+                /* BACKTRACKING FORÇADO após achar uma solução, desfaz a última escolha para continuar a busca por outras combinações. */
                 col_livre[col] = TRUE;
                 diag_p_livre[lin - col] = TRUE;
                 diag_s_livre[lin + col] = TRUE;
                 col = n; /* Força a entrada no bloco de backtracking no próximo ciclo */
             }
         } else {
-            /* CONDIÇÃO DE PARADA: Se o retrocesso chegar à linha 0 e não houver mais colunas para testar. */
+            /* CONDIÇÃO DE PARADA Se o retrocesso chegar à linha 0 e não houver mais colunas para testar. */
             if (lin == 0) {
                 acabou = TRUE;
             } else {
-                /* MOMENTO DE RETROCESSO: Quando nenhuma coluna na linha atual é válida, o algoritmo 
+                /* MOMENTO DE RETROCESSO Quando nenhuma coluna na linha atual é válida, o algoritmo 
                    volta para a linha anterior (lin--), desfaz a escolha feita antes (reset para TRUE) 
                    e tenta a próxima coluna disponível (col++). */
                 lin--; 
